@@ -1,18 +1,20 @@
-@echo off
-
+:: Make the Script easier to test and Debug
+@if not defined debug_assist (@ECHO OFF) else (@echo on)
+if not defined devtools (goto home) else (goto dtd)
 
 :home
-echo %ipfile% opened SAK on %date%%time% >C:\SAK\bin\logs\startlog%lognum%\startlog%lognum%.txt
-set /p datefile=<C:\SAK\bin\accountinfo\datecreated.txt
-set /p ipfile=<C:\SAK\bin\accountinfo\ip.txt
-if not exist C:\SAK\bin\accountinfo mkdir C:\SAK\bin\accountinfo
-if not exist C:\SAK\bin\logs mkdir C:\SAK\bin\logs 
-if exist C:\SAK\bin\logs\s.txt del C:\SAK\bin\logs\s.txt
-if exist C:\SAK\bin\accountinfo\d.txt del C:\SAK\bin\accountinfo\d.txt
-set lognum=SSID%random%%random%
+if not exist bin mkdir bin
+cd bin
+if not exist accountinfo mkdir accountinfo
+if not exist logs mkdir logs
+cd %~dp0
+echo %username% opened SAK on %date%%time% > startlog%date%%time%.txt
+set /p date-account-created=<%cd%\bin\accountinfo\datecreated.txt
+set /p ip-account-created=<%cd%\bin\accountinfo\ip.txt
+
 cls
 powershell -window normal -command ""
-title SAK BETA 0.4.4 // @pfpz
+title SAK BETA 0.4.4 // @pfpz // @pirany1
 color c0
 echo ________________________________________________________________
 echo _____/\\\\\\\\\\\_______/\\\\\\\\\_____/\\\________/\\\_________        
@@ -27,46 +29,42 @@ echo ___________\///////////_____\///________\///__\///________\///__
 echo ________________________________________________________________
 echo    Please login using the message boxes that have been opened:     
 echo ________________________________________________________________ 
-mkdir C:\SAK\bin\logs\startlog%lognum%
-if not exist C:\SAK\bin\accountinfo\user.txt goto startfail
+if not exist %cd%\bin\accountinfo\user.txt goto startfail
 goto home2
 
 :startfail
-mkdir C:\SAK\bin\logs\faillog%lognum%
-echo %ipfile% failed a start due to no account on %date%%time% >C:SAK\bin\logs\faillog%lognum%\faillog%lognum%.txt
+mkdir %cd%\bin\logs\faillog%date%%time%
+echo %username% failed a start due to no account on %date%%time% > %cd%\bin\logs\faillog%date%%time%\faillog%date%%time%.txt
 powershell -window normal -command ""
-start C:\SAK\bin\starterror.vbs
-if not exist C:\SAK\bin\accountinfo mkdir C:\SAK\bin\accountinfo
-if not exist C:\SAK\bin\logs mkdir C:\SAK\bin\logs
-goto accountcreate 
+msg * /TIME:5 "There was an error while starting SAK, it would appear there is no accounts currently created. Create one now!"
 
 :home2
-set /p passfile=<C:\SAK\bin\accountinfo\pass.txt
-set /p userfile=<C:\SAK\bin\accountinfo\user.txt
+set /p passfile=<%cd%\bin\accountinfo\pass.txt
+set /p userfile=<%cd%\bin\accountinfo\user.txt
 powershell -Command "& {Add-Type -AssemblyName Microsoft.VisualBasic; Add-Type -AssemblyName System.Windows.Forms; [Microsoft.VisualBasic.Interaction]::InputBox('Enter your username:', 'SAK BETA 0.4.4 Login', ''); $mainForm.Controls.Add($lbl); $mainForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen; $mainForm.ShowDialog()}" > %TEMP%\user.tmp 
 set /p user=<%TEMP%\user.tmp                                                                                             
 if not %user%==%userfile% goto fail
 powershell -Command "& {Add-Type -AssemblyName Microsoft.VisualBasic; Add-Type -AssemblyName System.Windows.Forms; [Microsoft.VisualBasic.Interaction]::InputBox('Enter your password:', 'SAK BETA 0.4.4 Login'); $mainForm.Controls.Add($lbl); $mainForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen; $mainForm.ShowDialog()}" > %TEMP%\pass.tmp 
 set /p pass=<%TEMP%\pass.tmp 
 if not %pass%==%passfile% goto fail 
-for /f "tokens=2 delims=:" %%a in ('ipconfig^|find "IPv4 Address"') do (
-set ip=%%a
+for /f %%a in ('powershell Invoke-RestMethod api.ipify.org') do set local_ip=%%a
+set ip=%local_ip%  
 goto BREAK2
-)
+
 
 :BREAK2
-mkdir C:\SAK\bin\logs\goodlog%lognum%
-echo %ip: =% logged in on %date%%time% with username %user% and password %pass% >C:\SAK\bin\logs\goodlog%lognum%\goodlog%lognum%.txt
+mkdir %cd%\bin\logs\goodlog%date%%time%
+echo %username% logged in on %date%%time% with username %user% and password %pass% >%cd%\bin\logs\goodlog%date%%time%\goodlog%date%%time%.txt
 goto menu
 
 
 
 :loggedout
 cls
-mkdir C:\SAK\bin\logs\startlog%lognum%
-echo %ipfile% logged out of %userfile% on %date%%time% >C:\SAK\bin\logs\startlog%lognum%\startlog%lognum%.txt
+mkdir %cd%\bin\logs\startlog%date%%time%
+echo %ipfile% logged out of %userfile% on %date%%time% >%cd%\bin\logs\startlog%date%%time%\startlog%date%%time%.txt
 powershell -window normal -command ""
-echo You are now logged out of %userfile%...
+echo You are now logged out of %username%...
 timeout /t 3 /nobreak
 goto home
 
@@ -74,14 +72,14 @@ goto home
 cls
 powershell -window minimized -command ""
 cls
-for /f "tokens=2 delims=:" %%a in ('ipconfig^|find "IPv4 Address"') do (
-set ip=%%a
+for /f %%a in ('powershell Invoke-RestMethod api.ipify.org') do set local_ip=%%a
+set ip=%local_ip%  
 goto BREAK
-)
+
 
 :BREAK
-mkdir C:\SAK\bin\logs\badlog%lognum%
-echo %ip: =% failed a log in on %date%%time% with username %user% and password %pass% >C:\SAK\bin\logs\badlog%lognum%\badlog%lognum%.txt
+mkdir %cd%\bin\logs\badlog%date%%time%
+echo %ip% failed a log in on %date%%time% with username %user% and password %pass% >%cd%\bin\logs\badlog%lognum%\badlog%lognum%.txt
 powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('Your login has failed. Press Ok to retry or Cancel to close SAK. If error persists contact @pfpz', 'Login error: ', 'OkCancel', [System.Windows.Forms.MessageBoxIcon]::Warning; $mainForm.Controls.Add($lbl); $mainForm.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen; $mainForm.ShowDialog()}" > %TEMP%\out45.tmp
 set /p OUT45=<%TEMP%\out45.tmp
 if %OUT45%==OK goto home
@@ -96,21 +94,20 @@ powershell -window normal -command ""
 color c0
 mode con:cols=100 lines=30
 title SAK BETA 0.4.4 Directory // @pfpz
-echo.     SSID (Session ID):  // Use this to identify which log is for which session
-echo.     %lognum% // Current User: %userfile%
-echo. ----------------------------------------------------------------------------------------
-echo.  !!!!!!!!!!!!!!!!!!!!! SAK Multi Tool (Swiss army knife) is a tool !!!!!!!!!!!!!!!!!!!!
-echo.  !  Swiss Army Knife ! coded in batch for Windows based devices    ! Swiss Army Knife !
-echo.  !     Multi Tool    ! to help in Network based white hat hacking  !     Multi Tool   !
-echo.  !    Made by @pfpz  ! and pen testing. SAK can also be used for   !   Made by @pfpz  !
-echo.  !!!!!!!!!!!!!!!!!!!!! many more educational uses! Check it out:   !!!!!!!!!!!!!!!!!!!!
-echo. ----------------------------------------------------------------------------------------
-echo.  Please select a Tool you would like to use down below !! Follow TikTok @pfpz for more!
-echo. -----------------------------------------------------------------------------------------
-echo.      [RAINBOW Pinger] - 1 // [IP Tracker] - 2 // [Wifi Recovery] - 3 // [Logout] - 4 
-echo. -----------------------------------------------------------------------------------------
-echo.            [Browser] - 5 // [Exit] - 6 // [News] - 7 // [Account Manager] - 8
-echo.
+echo Current User: %userfile%
+echo ----------------------------------------------------------------------------------------
+echo  !!!!!!!!!!!!!!!!!!!!! SAK Multi Tool (Swiss army knife) is a tool !!!!!!!!!!!!!!!!!!!!
+echo  !  Swiss Army Knife ! coded in batch for Windows based devices    ! Swiss Army Knife !
+echo  !     Multi Tool    ! to help in Network based white hat hacking  !     Multi Tool   !
+echo  !    Made by @pfpz  ! and pen testing. SAK can also be used for   !   Made by @pfpz  !
+echo  !!!!!!!!!!!!!!!!!!!!! many more educational uses! Check it out:   !!!!!!!!!!!!!!!!!!!!
+echo ----------------------------------------------------------------------------------------
+echo  Please select a Tool you would like to use down below !! Follow TikTok @pfpz for more!
+echo -----------------------------------------------------------------------------------------
+echo      [RAINBOW Pinger] - 1 // [IP Tracker] - 2 // [Wifi Recovery] - 3 // [Logout] - 4 
+echo -----------------------------------------------------------------------------------------
+echo            [Browser] - 5 // [Exit] - 6 // [News] - 7 // [Account Manager] - 8
+echo
 set /p menuans=Directory selection: 
 if %menuans%==1 goto rainbowp
 if %menuans%==2 goto tracker
@@ -326,31 +323,18 @@ echo Welcome to SAK Smart Batch Browser, or SAK.SBB for short!
 echo -------------------------------------------------------------------------------
 echo Now redirecting you to http://www.google.pt/search?q=%browserq%...
 echo -------------------------------------------------------------------------------
->nul chcp 65001
-set "_spc=          "
-set "_bar=■■■■■■■■■■"
-
-setlocal enabledelayedexpansion
-
-for /f %%a in ('copy /Z "%~dpf0" nul')do for /f skip^=4 %%b in ('echo;prompt;$H^|cmd')do set "BS=%%~b" & set "CR=%%a"
-for /l %%L in (1 1 10)do <con: set /p "'= !CR!!BS!!CR![!_bar:~0,%%~L!!BS!!_spc:~%%~L!] " <nul & >nul timeout.exe /t 1 /nobreak
-
-
-cd C:\Program Files\Internet Explorer
-iexplore http://www.google.pt/search?q=%browserq%
+:: Why use a 32563465 Line PS code when you can use explorer
+explorer http://www.google.pt/search?q=%browserq%
 powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $notify = New-Object System.Windows.Forms.NotifyIcon; $notify.Icon = [System.Drawing.SystemIcons]::Information; $notify.Visible = $true; $notify.ShowBalloonTip(0, 'SAK.SBB', 'Your search is now done.', [System.Windows.Forms.ToolTipIcon]::Information)}"
 goto browser
 
 :homesaklic
-set /p passfile=<C:\SAK\bin\accountinfo\pass.txt
-set /p userfile=<C:\SAK\bin\accountinfo\user.txt
-set /p datefile=<C:\SAK\bin\accountinfo\datecreated.txt
-set /p ipfile=<C:\SAK\bin\accountinfo\ip.txt
+cd %~dp0
 title SAK Account Manager // @pfpz
 cls
 color 0a
 cls
-if exist C:\SAK\bin\accountinfo\user.txt (echo Current user is %userfile%) else echo There is currently no accounts created on this device
+if exist %cd%\bin\accountinfo\user.txt (echo Current user is %userfile%) else echo There is currently no accounts created on this device
 echo Create an account now if this is your first time or make a new account! (E)xit \ (S)AK
 echo -------------------------------------------------------------------------------------------
 set /p choice=Do you want to (C)reate a new account, (D)elete an account, or see account (I)nfo?: 
@@ -358,8 +342,8 @@ if %choice%==c goto accountcreate
 if %choice%==d goto accountdelete
 if %choice%==e exit
 if %choice%==i goto accinfo
-( if %choice%==s if exist C:\SAK\bin\accountinfo\user.txt goto menu 
-    if not exist C:\SAK\bin\accountinfo\user.txt goto accountcreate )
+( if %choice%==s if exist %cd%\bin\accountinfo\user.txt goto menu 
+    if not exist %cd%\bin\accountinfo\user.txt goto accountcreate )
 
 :accountcreate
 title if u see this hi lol
@@ -374,30 +358,31 @@ color 0c
 title Account Creation Failed: // @pfpz
 echo Your account creation has failed, refer to the popup message on your screen for information.
 echo Contact @pfpz if your issue persists
-start C:\SAK\bin\ace.vbs
+msg * /TIME:5 "There is already an account created on this device, enter (I) if you forgot your password or (D) to delete your account and create a new one.",16, "Account Creation Error:"
 goto homesaklic
 
 :accountcreate1
+cd %~dp0
 cls
 color 0a
 title SAK Account Creator // @pfpz
 echo Create a new account below!
 set /p user=Enter username: 
 set /p pass=Enter password: 
-echo %user% > C:\SAK\bin\accountinfo\user.txt
-echo %pass% > C:\SAK\bin\accountinfo\pass.txt
-echo %date% > C:\SAK\bin\accountinfo\datecreated.txt
-for /f "tokens=2 delims=:" %%a in ('ipconfig^|find "IPv4 Address"') do (
-set ip=%%a
+echo %user% > %cd%\bin\accountinfo\user.txt
+echo %pass% > %cd%\bin\accountinfo\pass.txt
+echo %date% > %cd%\bin\accountinfo\datecreated.txt
+for /f %%a in ('powershell Invoke-RestMethod api.ipify.org') do set local_ip=%%a
+set ip=%local_ip%  
 goto :BREAK
-)
+
 
 :BREAK
-echo %ip: =% >C:\SAK\bin\accountinfo\ip.txt
+echo %ip: =% >%cd%\bin\accountinfo\ip.txt
 goto done
 
 :accountdelete
-if not exist C:\SAK\bin\accountinfo\user.txt goto errordel
+if not exist %cd%\bin\accountinfo\user.txt goto errordel
 cls
 color 0c
 title Account Deleter // @pfpz
@@ -408,22 +393,22 @@ if %delete%==n goto homesaklic
 
 :deleted
 cls
-if exist C:\SAK\bin\accountinfo\user.txt goto delaccnow
-if not exist C:\SAK\bin\accountinfo\user.txt goto errordel
+if exist %cd%\bin\accountinfo\user.txt goto delaccnow
+if not exist %cd%\bin\accountinfo\user.txt goto errordel
 
 :delaccnow
 cls
-del C:\SAK\bin\accountinfo\user.txt
-del C:\SAK\bin\accountinfo\pass.txt
-del C:\SAK\bin\accountinfo\datecreated.txt
-del C:\SAK\bin\accountinfo\ip.txt
+del %cd%\bin\accountinfo\user.txt
+del %cd%\bin\accountinfo\pass.txt
+del %cd%\bin\accountinfo\datecreated.txt
+del %cd%\bin\accountinfo\ip.txt
 goto sucdel
 
 :errordel
 cls
 color c0
 title ERROR WHILE DELETING ACCOUNT: // @pfpz
-start C:\SAK\bin\delerror.vbs
+msg * /TIME:5 "There is currently no accounts created on this device, Please try again",16, "Account Deletion Error:"
 echo There was an issue with your deletion, please try again..
 goto accountcreate
 
@@ -444,10 +429,10 @@ powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; [System.Win
 set /p buttonpress=<%TEMP%\out78.tmp
 if %buttonpress%==Yes goto home
 if %buttonpress%==No goto homesaklic
-if %buttonpress%==Cancel (del C:\SAK\bin\accountinfo\user.txt
-del C:\SAK\bin\accountinfo\pass.txt
-del C:\SAK\bin\accountinfo\datecreated.txt
-del C:\SAK\bin\accountinfo\ip.txt
+if %buttonpress%==Cancel (del %cd%\bin\accountinfo\user.txt
+del %cd%\bin\accountinfo\pass.txt
+del %cd%\bin\accountinfo\datecreated.txt
+del %cd%\bin\accountinfo\ip.txt
 goto accountcreate) 
 goto homesaklic
 
@@ -455,7 +440,7 @@ goto homesaklic
 cls
 color 0c
 title SAK Account Info // @pfpz
-if exist C:\SAK\bin\accountinfo\pass.txt (
+if exist %cd%\bin\accountinfo\pass.txt (
 echo Account info is displayed below
 echo Username: %userfile%
 echo Password: %passfile%

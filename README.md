@@ -20,11 +20,8 @@ To run, you must extract the "SAK" folder to your desktop, then move it to your 
 
 You must make an account on first launch or if an account has been deleted. If you have any errors while creating an account please contact @pfpz on github/tiktok or @k6iyo on telegram!
 
-# Min System Req:
+# Credits
 
--
+[pfpz](https://github.com/pfpz) 
 
-amd64 Based Windows 10+ 
-intel core i3+ 
-6gb+ storage 
-2gb+ ram
+[PIRANY](https://github.com/pirany1) 
